@@ -103,7 +103,8 @@ venv.bak/
 # mypy
 .mypy_cache/
 # data
-*.text
+*.txt
 *.json
 # model
 *.model
+version
