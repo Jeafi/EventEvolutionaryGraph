@@ -278,8 +278,9 @@ if __name__ == "__main__":
                     lastone = d
             serial = int(''.join(file.split('.')[0].split('-')))*100000
             serial0 = serial
-            for data in s:
+            for i, data in enumerate(s):
                 data['serial'] = serial
+                data['title'] = json.loads(lines[i]).get('title')
                 json.dump(data,fw,ensure_ascii=False)
                 serial = serial+1
                 fw.write('\n')

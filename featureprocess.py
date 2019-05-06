@@ -26,26 +26,30 @@ def doprocess():
     # names = []
     # lines = f.readlines()
     #
-    f=open("cepairs/2018-10-02.txt","r",encoding='utf8')
+    f = open("cepairs/2018-10-02.txt", "r", encoding='utf8')
     datas = []
     for line in f:
-        data=json.loads(line)
+        data = json.loads(line)
         datas.append(data)
     f.close()
     capus = []
     for data in datas:
         if data['cause'].find('v') == -1 or data['cause'].find('n') == -1 or data['effect'].find('v') == -1 or data['effect'].find('n') == -1:
             continue
-        cause = ''.join([word.split('/')[0] for word in data['cause'].split(' ') if word.split('/')[0]])
-        effect = ''.join([word.split('/')[0] for word in data['effect'].split(' ') if word.split('/')[0]])
+        cause = ''.join([word.split('/')[0]
+                         for word in data['cause'].split(' ') if word.split('/')[0]])
+        effect = ''.join([word.split('/')[0]
+                          for word in data['effect'].split(' ') if word.split('/')[0]])
         capu = {}
-        capu['serial'] = str(data['serial'])+'cause'
+        capu['serial'] = str(data['serial']) + 'cause'
         capu['tigger'] = data['tag']
+        capu['title'] = data['title']
         capu['text'] = cause
         capus.append(capu)
         capu = {}
-        capu['serial'] = str(data['serial'])+'effect'
+        capu['serial'] = str(data['serial']) + 'effect'
         capu['tigger'] = data['tag']
+        capu['title'] = data['title']
         capu['text'] = effect
         capus.append(capu)
     ids = []
@@ -55,7 +59,7 @@ def doprocess():
     # for line in codecs.open('ce\cause.txt', encoding='utf8'):
     for capu in capus:
         id = capu['serial']
-        title = []
+        title = capu['title']
         text = capu['text']
     #         text = title + '。' + text
         count += 1
@@ -88,11 +92,11 @@ def doprocess():
             words = words.split('\t')
             postags = postagger.postag(words)
             netags = recognizer.recognize(words, postags)
-            netags =  '\t'.join(netags)
+            netags = '\t'.join(netags)
             netags = netags.split('\t')
             for i in range(len(postags)):
                 if postags[i] in ['n', 'nh', 'ni', 'nl', 'ns', 'nz']:
-                        t_noun.append(words[i])
+                    t_noun.append(words[i])
             for i in range(len(postags)):
                 if postags[i] in ['v']:
                     t_verb.append(words[i])
@@ -122,19 +126,19 @@ def doprocess():
     recognizer.release()
     fout = codecs.open(r'processresult\capus.txt', 'w', encoding='utf8')
     for i in range(len(ids)):
-            d = {}
-            d['id'] = ids[i]
-            d['title'] = titles[i]
-            d['text'] = texts[i]
-            d['text_ner'] = texts_ner[i]
-            d['text_ner_tag'] = texts_ner_tag[i]
-            d['text_noun'] = texts_noun[i]
-            d['text_verb'] = texts_verb[i]
-            d['text_keywords'] = texts_keywords[i]
-            strObj = json.dumps(d, ensure_ascii=0)
-            fout.write(strObj)
-            fout.write('\n')
-        
+        d = {}
+        d['id'] = ids[i]
+        d['title'] = titles[i]
+        d['text'] = texts[i]
+        d['text_ner'] = texts_ner[i]
+        d['text_ner_tag'] = texts_ner_tag[i]
+        d['text_noun'] = texts_noun[i]
+        d['text_verb'] = texts_verb[i]
+        d['text_keywords'] = texts_keywords[i]
+        strObj = json.dumps(d, ensure_ascii=0)
+        fout.write(strObj)
+        fout.write('\n')
+
+
 if __name__ == "__main__":
     doprocess()
-    
