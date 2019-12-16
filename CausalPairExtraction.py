@@ -246,7 +246,6 @@ def extract_to_json():
     # TiggerFile.close()
     # print(Filter)
     # print(tigger)
-    s = set()
     for file in tqdm(files):
         if not os.path.isdir(file):
             f = open(os.path.join(path, file), 'r', encoding='utf-8')
@@ -255,6 +254,8 @@ def extract_to_json():
             fw = open(os.path.join(writepath, file.replace('.txt','_ce.json')), 'w', encoding='utf8')
             titles = []
             extractor = CausalityExractor()
+            serial0 = int(''.join(file.split('.')[0].split('-')))*100000
+            serial = serial0
             for line in tqdm(lines):
                 # flag = False
                 # for fWord in Filter:
@@ -268,7 +269,6 @@ def extract_to_json():
                 dr = re.compile(r'<[^>]+>',re.S)
                 title = dr.sub('',json.loads(line).get('title'))
                 content = dr.sub('',json.loads(line).get('content'))
-                serial = int(''.join(file.split('.')[0].split('-')))*100000
                 data = extractor.extract_main(title+'。'+content)
                 lastpair = dict()
                 for d in data:
@@ -284,7 +284,6 @@ def extract_to_json():
             # s = []
             # lastone = dict()
             # for i, title in tqdm(enumerate(titles)):
-                
             #     for d in data:
             #         if lastone == d:
             #             continue
