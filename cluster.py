@@ -75,11 +75,11 @@ def write_file(result, corpus):
     for i in range(len(result)):
         re = result[i]
         data = dict()
-        for r in re:
-            for e in re:
-                if corpus[r]['id'].replace('cause', '').replace('effect', '') == corpus[e]['id'].replace('effect', '').replace('cause', ''):
-                    re.remove(r)
-                    re.remove(e)
+        # for r in re:
+        #     for e in re:
+        #         if corpus[r]['id'].replace('cause', '').replace('effect', '') == corpus[e]['id'].replace('effect', '').replace('cause', ''):
+        #             re.remove(r)
+        #             re.remove(e)
         if len(re) == 0:
             continue
         data['NodeNo'] = i

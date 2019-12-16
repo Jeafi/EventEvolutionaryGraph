@@ -9,6 +9,8 @@ from tqdm import tqdm
 import re, jieba
 import jieba.posseg as pseg
 from pyltp import SentenceSplitter
+import copy
+
 class CausalityExractor():
     def __init__(self):
         pass
@@ -225,8 +227,8 @@ class CausalityExractor():
     '''切分最小句'''
     def fined_sentence(self, sentence):
         return re.split(r'[？！，；]', sentence)
-    
-if __name__ == "__main__":
+
+def extract_to_json():
     path = r'rawdata'
     writepath = r'cepairs'
     files = os.listdir(path)
@@ -250,7 +252,87 @@ if __name__ == "__main__":
             f = open(os.path.join(path, file), 'r', encoding='utf-8')
             lines = f.readlines()
             f.close()
-            fw = open(os.path.join(writepath, file), 'w', encoding='utf8')
+            fw = open(os.path.join(writepath, file.replace('.txt','_ce.json')), 'w', encoding='utf8')
+            titles = []
+            extractor = CausalityExractor()
+            for line in tqdm(lines):
+                # flag = False
+                # for fWord in Filter:
+                #     if line.find(fWord) != -1:
+                #         flag = True 
+                #         break
+                # if flag == False: #如果不包含需要过滤的词
+                    # newSp = line.split('#')
+                    # serial = newSp[0]
+                    # content = newSp[1] +'。'+newSp[2]
+                dr = re.compile(r'<[^>]+>',re.S)
+                title = dr.sub('',json.loads(line).get('title'))
+                content = dr.sub('',json.loads(line).get('content'))
+                serial = int(''.join(file.split('.')[0].split('-')))*100000
+                data = extractor.extract_main(title+'。'+content)
+                lastpair = dict()
+                for d in data:
+                    if lastpair == d:
+                        continue
+                    else:
+                        d['serial'] = serial
+                        serial +=1
+                        d['title'] = title
+                        d['content'] = content
+                        json.dump(d, fw, ensure_ascii=False)
+                        fw.write('\n')
+            # s = []
+            # lastone = dict()
+            # for i, title in tqdm(enumerate(titles)):
+                
+            #     for d in data:
+            #         if lastone == d:
+            #             continue
+            #         else:
+            #             temp_dict = {}
+            #             temp_dict['title'] = json.loadline[i]
+            #             s.append()
+            #         lastone = d
+            # serial = int(''.join(file.split('.')[0].split('-')))*100000
+            # serial0 = serial
+            # print(len(s),len(lines))
+            # for i, data in enumerate(s):
+            #     data['serial'] = serial
+            #     data['title'] = json.loads(lines[i]).get('title')
+            #     json.dump(data, fw, ensure_ascii=False)
+            #     serial = serial+1
+            #     fw.write('\n')
+            fw.close()
+            print(serial-serial0)
+
+def extract_for_srl():
+    '''
+    为srl生成训练数据
+    '''
+    path = r'rawdata'
+    writepath = r'cepairs'
+    files = os.listdir(path)
+    fw = open('srl.txt', 'w', encoding='utf-8')
+    # 
+    # FilterFile = open('WordsDic/filter.txt', 'r', encoding='utf8')
+    # Filter = []
+    # TiggerFile = open('WordsDic/tigger.txt', 'r', encoding='utf8')
+    # tigger = []
+    # for fWord in FilterFile.readlines():
+    #      Filter.append(fWord.strip())
+    # # for tig in TiggerFile.readlines():
+    # #     tigger.append(tig.strip())
+    # FilterFile.close()
+    # TiggerFile.close()
+    # print(Filter)
+    # print(tigger)
+    s = set()
+    for file in tqdm(files):
+        if not os.path.isdir(file):
+            f = open(os.path.join(path, file), 'r', encoding='utf-8')
+            lines = f.readlines()
+            f.close()
+            # fw = open(os.path.join(writepath, file), 'w', encoding='utf8')
             titles = []
             extractor = CausalityExractor()
             for line in tqdm(lines):
@@ -265,24 +347,70 @@ if __name__ == "__main__":
                     # content = newSp[1] +'。'+newSp[2]
                 title = json.loads(line).get('title')
                 content = json.loads(line).get('content')
-                titles.append(title+'。'+content)
-            s = []
+                titles.append(title+'。 '+content)
             lastone = dict()
             for title in tqdm(titles):
+                dr = re.compile(r'<[^>]+>',re.S)
+                title = dr.sub('',title)
+                s = ['O']*len(title)
                 data = extractor.extract_main(title)
+                # sentences = title.split('。')
+                # for s in sentences:
+                indexlist = []
                 for d in data:
-                    if lastone == d:
-                        continue
+                    try:
+                        for tag in d['tag'].split('-'):
+                            indexlist = [i.start() for i in re.finditer(tag, title)]
+                            for i in indexlist:
+                                s[i] = 'B-TIG'
+                                for j in range(1,len(tag)):
+                                    s[i+j] = 'I-TIG'
+                            # print(indexlist)
+                            # print(s)
+                        for cause in d['cause']:
+                            cause = ''.join([word.split('/')[0] for word in d['cause'].split(' ') if word.split('/')[0]])
+                            try:
+                                indexlist = [i.start() for i in re.finditer(cause, title)]
+                            except:
+                                pass
+                            for i in indexlist:
+                                s[i] = 'B-CAUSE'
+                                for j in range(1,len(cause)):
+                                    s[i+j] = 'I-CAUSE'
+                            for i in indexlist:
+                                s[i] = 'B-CAUSE'
+                                for j in range(1,len(cause)):
+                                    s[i+j] = 'I-CAUSE'
+                            # print(indexlist)
+                            # print(s)
+                        for effect in d['effect']:
+                            effect = ''.join([word.split('/')[0] for word in d['effect'].split(' ') if word.split('/')[0]])
+                            try:
+                                indexlist = [i.start() for i in re.finditer(effect, title)]
+                            except:
+                                pass
+                                # print(d)
+                                # print(title)
+                            for i in indexlist:
+                                s[i] = 'B-EFFECT'
+                                for j in range(1,len(effect)):
+                                    s[i+j] = 'I-EFFECT'
+                            # print(indexlist)
+                            # print(s)
+                    except:
+                        pass
+                for i in range(len(title)):
+                    if title[i] == ' ':
+                        fw.write('\n')
                     else:
-                        s.append(d)
-                    lastone = d
-            serial = int(''.join(file.split('.')[0].split('-')))*100000
-            serial0 = serial
-            for i, data in enumerate(s):
-                data['serial'] = serial
-                data['title'] = json.loads(lines[i]).get('title')
-                json.dump(data,fw,ensure_ascii=False)
-                serial = serial+1
+                        fw.write(title[i]+' '+s[i]+'\n')
                 fw.write('\n')
-            fw.close()
-            print(serial-serial0)
+
+if __name__ == "__main__":
+    extract_to_json()
+
+    # extractor = CausalityExractor()
+    # data = extractor.extract_main("之所以爱你是因为我是aaa。因为我是aaa所以我用你。")
+    # print(data)
+    # print(len(data))
+    # extract_for_srl()
